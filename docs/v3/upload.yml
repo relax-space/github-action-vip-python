@@ -1,0 +1,102 @@
+# 更多: https://docs.github.com/cn/actions/automating-builds-and-tests/building-and-testing-python
+name: upload
+on:
+  repository_dispatch:
+    types: [builds]
+jobs:
+  build-win:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.client_payload.ref }}
+    - name: install python
+      uses: actions/setup-python@v4
+      with:
+        # 最新版本的python
+        python-version: '3.x'
+    - name: install dependence
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        if ( [System.IO.File]::Exists("requirements.txt")) 
+        { 
+          pip install -r requirements.txt 
+        } 
+    - name: make package
+      run: |
+        pyinstaller -F -w --clean -y --dist ./ --workpath /tmp main.py
+    - name: upload
+      id: upload
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        upload_url: ${{github.event.client_payload.release_url}}
+        asset_path: ${{github.workspace}}/main.exe
+        asset_name: main-win.exe
+        asset_content_type: application/octet-stream
+  build-mac:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.client_payload.ref }}
+    - name: install python
+      uses: actions/setup-python@v4
+      with:
+        # 最新版本的python
+        python-version: '3.x'
+    - name: install dependence
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: make package
+      run: |
+        pyinstaller -F --clean -y --dist ./ --workpath /tmp main.py
+        ls -l .
+    - name: upload
+      id: upload
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        upload_url: ${{github.event.client_payload.release_url}}
+        asset_path: ${{github.workspace}}/main
+        asset_name: main-macos
+        asset_content_type: application/octet-stream
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.client_payload.ref }}
+    - uses:  hms5232/install-CNS11643-fonts-action@v1
+      with:
+        kai: 'false'
+        sung: 'true'
+      timeout-minutes: 10
+    - name: install python
+      uses: actions/setup-python@v4
+      with:
+        # 最新版本的python
+        python-version: '3.x'
+    - name: install dependence
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: make package
+      run: |
+        pyinstaller -F --clean -y --dist ./ --workpath /tmp main.py
+    - name: upload
+      id: upload
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        upload_url: ${{github.event.client_payload.release_url}}
+        asset_path: ${{github.workspace}}/main
+        asset_name: main-linux
+        asset_content_type: application/octet-stream

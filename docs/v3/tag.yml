@@ -1,0 +1,30 @@
+# 
+# 更多: https://docs.github.com/cn/actions/automating-builds-and-tests/building-and-testing-python
+
+name: tag
+on:
+  push:
+    tags:
+    - 'v*'
+
+jobs:
+  build-pre:
+    runs-on: ubuntu-latest
+    steps:
+    - name: create release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        tag_name: ${{github.ref}}
+        release_name: Release ${{github.ref}}
+        draft: false
+        prerelease: false
+    - name: Dispatch Builds
+      uses: peter-evans/repository-dispatch@v1.0.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        event-type: builds
+        client-payload: '{"release_url": "${{ steps.create_release.outputs.upload_url }}", "ref": "${{ github.ref }}"}' 
+

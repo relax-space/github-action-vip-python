@@ -1,0 +1,42 @@
+# v1: 基本功能(成功)
+name: v1
+on: [workflow_call]
+jobs:
+  linux-windows:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: install
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/src cdrx/pyinstaller-windows 'pyinstaller -F -w --clean -y --dist ./ --workpath /tmp main.py'
+        docker run -v $GITHUB_WORKSPACE:/src cdrx/pyinstaller-linux 'pyinstaller -F --clean -y --dist ./ --workpath /tmp main.py'
+    - name: create release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        tag_name: ${{github.ref}}
+        release_name: Release ${{github.ref}}
+        draft: false
+        prerelease: false
+    - name: upload
+      id: upload
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        upload_url: ${{steps.create_release.outputs.upload_url}}
+        asset_path: ${{github.workspace}}/main.exe
+        asset_name: main-win.exe
+        asset_content_type: application/octet-stream
+    - name: upload2
+      id: upload2
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        upload_url: ${{steps.create_release.outputs.upload_url}}
+        asset_path: ${{github.workspace}}/main
+        asset_name: main-linux
+        asset_content_type: application/octet-stream

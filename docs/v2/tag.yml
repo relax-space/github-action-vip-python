@@ -1,0 +1,31 @@
+# 
+# 更多: https://docs.github.com/cn/actions/automating-builds-and-tests/building-and-testing-python
+
+name: tag
+on:
+  push:
+    tags:
+    - 'v*'
+
+jobs:
+  build-pre:
+    runs-on: ubuntu-latest
+    steps:
+    - name: create release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        tag_name: ${{github.ref}}
+        release_name: Release ${{github.ref}}
+        draft: false
+        prerelease: false
+    - name: Dispatch Builds
+      run: |
+        curl -XPOST \
+          -u "peter-evans:${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.everest-preview+json" \
+          -H "Content-Type: application/json" https://api.github.com/repos/${{ github.repository }}/dispatches \
+          --data '{"event_type": "builds", "client_payload": {"release_url": "${{ steps.create_release.outputs.upload_url }}", "ref": "${{ github.ref }}"}}' 
+
