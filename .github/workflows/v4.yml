@@ -89,11 +89,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses:  hms5232/install-CNS11643-fonts-action@v1
-      with:
-        kai: 'false'
-        sung: 'true'
-      timeout-minutes: 10
     - name: install python
       uses: actions/setup-python@v4
       with:
